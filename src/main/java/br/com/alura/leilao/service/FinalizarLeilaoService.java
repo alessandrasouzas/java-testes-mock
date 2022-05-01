@@ -15,7 +15,7 @@ public class FinalizarLeilaoService {
 	@Autowired
 	private LeilaoDao leiloes;
 
-	public void finalizarLeiloesExpirados() {
+	public void finalizarLeiloesExpirados() { 
 		List<Leilao> expirados = leiloes.buscarLeiloesExpirados();
 		expirados.forEach(leilao -> {
 			Lance maiorLance = maiorLanceDadoNoLeilao(leilao);
