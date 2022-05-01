@@ -32,8 +32,12 @@ class FinalizarLeilaoServiceTest {
 	@Test
 	void deveriaFinalizarUmLeilao() {
 		List<Leilao> leiloes = leiloes();
-		
+
+		/*	Os métodos when e thenReturn são utilizados para alterar o comportamento de um método do mock
+		  	Sem eles, por padrão o mock sempre devolve um valor padrão: 0, false, null, etc. */
+
 		Mockito.when(leilaoDao.buscarLeiloesExpirados()).thenReturn(leiloes);
+		
 		service.finalizarLeiloesExpirados();
 		
 		Leilao leilao = leiloes.get(0);
