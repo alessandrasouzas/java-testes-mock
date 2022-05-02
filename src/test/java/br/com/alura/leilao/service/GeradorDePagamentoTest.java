@@ -1,7 +1,11 @@
 package br.com.alura.leilao.service;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +31,9 @@ class GeradorDePagamentoTest {
 	
 	@Captor
 	private ArgumentCaptor<Pagamento> captor;
+	
+	@Mock
+	private Clock clock;
 
 	@BeforeEach
 	public void beforeEach() {
@@ -38,9 +45,17 @@ class GeradorDePagamentoTest {
 	void deveriaCriarPagamentoParaVencedorDoLeilao() {
 		Leilao leilao = leilao();
 		Lance vencedor = leilao.getLanceVencedor();		
-		geradorService.gerarPagamento(vencedor);
+			
+		LocalDate data = LocalDate.of(2020, 12, 07);
 		
-		Mockito.verify(pagamentoDao).salvar(captor.capture());		
+		Instant instant = data.atStartOfDay(ZoneId.systemDefault()).toInstant();
+		
+		Mockito.when(clock.instant()).thenReturn(instant);
+		Mockito.when(clock.getZone()).thenReturn(ZoneId.systemDefault());
+	
+		geradorService.gerarPagamento(vencedor);
+		Mockito.verify(pagamentoDao).salvar(captor.capture());
+		
 		Pagamento pagamento = captor.getValue();
 		
 		Assert.assertEquals(LocalDate.now().plusDays(1), pagamento.getVencimento());
