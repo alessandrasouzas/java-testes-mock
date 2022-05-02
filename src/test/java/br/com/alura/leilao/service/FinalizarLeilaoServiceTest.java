@@ -19,13 +19,13 @@ import br.com.alura.leilao.model.Usuario;
 class FinalizarLeilaoServiceTest {
 
 	private FinalizarLeilaoService service;
-	
+
 	@Mock
 	private LeilaoDao leilaoDao;
-	
+
 	@Mock
 	private EnviadorDeEmails enviadorDeEmails;
-	
+
 	@BeforeEach
 	public void beforeEach() {
 		MockitoAnnotations.initMocks(this);
@@ -36,40 +36,68 @@ class FinalizarLeilaoServiceTest {
 	void deveriaFinalizarUmLeilao() {
 		List<Leilao> leiloes = leiloes();
 
-		/*	Os métodos when e thenReturn são utilizados para alterar o comportamento de um método do mock
-		  	Sem eles, por padrão o mock sempre devolve um valor padrão: 0, false, null, etc. */
+		/*
+		 * Os métodos when e thenReturn são utilizados para alterar o comportamento de
+		 * um método do mock Sem eles, por padrão o mock sempre devolve um valor padrão:
+		 * 0, false, null, etc.
+		 */
 
 		Mockito.when(leilaoDao.buscarLeiloesExpirados()).thenReturn(leiloes);
-		
+
 		service.finalizarLeiloesExpirados();
-		
+
 		Leilao leilao = leiloes.get(0);
-		
+
 		Assert.assertTrue(leilao.isFechado());
-		Assert.assertEquals(new BigDecimal("900"), leilao.getLanceVencedor().getValor());		
+		Assert.assertEquals(new BigDecimal("900"), leilao.getLanceVencedor().getValor());
 		Mockito.verify(leilaoDao).salvar(leilao);
+
 	}
-	
 
-    private List<Leilao> leiloes() {
-        List<Leilao> lista = new ArrayList<>();
+	@Test
+	void deveriaEnviarEmailParaVencedorDoLeilao() {
 
-        Leilao leilao = new Leilao("Celular",
-                        new BigDecimal("500"),
-                        new Usuario("Fulano"));
+		List<Leilao> leiloes = leiloes();
 
-        Lance primeiro = new Lance(new Usuario("Beltrano"),
-                        new BigDecimal("600"));
-        Lance segundo = new Lance(new Usuario("Ciclano"),
-                        new BigDecimal("900"));
+		Mockito.when(leilaoDao.buscarLeiloesExpirados()).thenReturn(leiloes);
 
-        leilao.propoe(primeiro);
-        leilao.propoe(segundo);
+		service.finalizarLeiloesExpirados();
 
-        lista.add(leilao);
+		Leilao leilao = leiloes.get(0);
+		Lance lanceVencedor = leilao.getLanceVencedor();
 
-        return lista;
+		Mockito.verify(enviadorDeEmails).enviarEmailVencedorLeilao(lanceVencedor);
+	}
 
-    }
+	@Test
+	void naoDeveriaEnviarEmailParaVencedorDoLeilaoEmCasoDeErrroAoEncerrarOLeilao() {
+
+		Mockito.when(leilaoDao.buscarLeiloesExpirados()).thenReturn(Mockito.any()).thenThrow(RuntimeException.class);
+
+		try {
+			
+			service.finalizarLeiloesExpirados();			
+			Mockito.verifyNoInteractions(enviadorDeEmails);
+			
+		} catch (Exception e) {}		
+		
+	}
+
+	private List<Leilao> leiloes() {
+		List<Leilao> lista = new ArrayList<>();
+
+		Leilao leilao = new Leilao("Celular", new BigDecimal("500"), new Usuario("Fulano"));
+
+		Lance primeiro = new Lance(new Usuario("Beltrano"), new BigDecimal("600"));
+		Lance segundo = new Lance(new Usuario("Ciclano"), new BigDecimal("900"));
+
+		leilao.propoe(primeiro);
+		leilao.propoe(segundo);
+
+		lista.add(leilao);
+
+		return lista;
+
+	}
 
 }
